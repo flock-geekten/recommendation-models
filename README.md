@@ -1,0 +1,2 @@
+# recommendation-model
+多重対応分析とガウス過程回帰による推薦モデルの構築
