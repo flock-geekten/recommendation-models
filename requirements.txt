@@ -1,0 +1,9 @@
+numpy
+pandas
+matplotlib
+japanize-matplotlib
+jupyterlab
+scikit-learn
+
+scipy
+GPy
