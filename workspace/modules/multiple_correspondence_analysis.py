@@ -15,7 +15,7 @@ def run(json, visualization=False):
     playlist = _data_processing(json)
     fun_features = _calc_mca(playlist, visualization)
     # CSVへ書き出す
-    fun_features.to_csv(OUTPUT_LOCATION+OUTPUT_FILENAME, index=False)
+    fun_features.to_csv(OUTPUT_LOCATION+OUTPUT_FILENAME, index=True)
 
 def _data_processing(json):
     df_json = _json2dataframe(json)
