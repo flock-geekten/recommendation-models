@@ -4,6 +4,9 @@ import pandas as pd
 # ガウス過程回帰
 import GPy
 
+# 正規化
+from sklearn.preprocessing import MinMaxScaler
+
 # 多重対応分析の結果のcsvの保存場所
 FUN_FEATURES = '/home/workspace/data/fun_features.csv'
 
@@ -13,7 +16,8 @@ def run(y_json):
     df_y = _json2dataframe(y_json)
     x_train, y_train = _create_train_set(fun_features, df_y)
     y_pred = _calc_gpr(fun_features, x_train, y_train)
-    return to_json(y_pred["95%"])
+    eval_vals = _calc_eval_vals(y_pred)
+    return to_json(eval_vals)
     
     
 def _json2dataframe(y_json):
@@ -48,7 +52,26 @@ def _calc_gpr(fun_features, x_train, y_train):
     y_pred.columns = ["5%","expected value","95%"]
     return y_pred
 
+
+def _calc_eval_vals(y_pred):
+    expected_value = y_pred["expected value"]
+    expected_value_mm = _calc_minmaxscaler(expected_value)
+    variation = y_pred["95%"] - y_pred["5%"]
+    variation_mm = _calc_minmaxscaler(variation)
     
+    A = 0.5
+    B = 1 - A
+    # 期待値が高く,ばらつきが大きい(今までに経験してない)遊びをレコメンドしたい気持ちが込められてる
+    eval_vals = A * expected_value_mm + B * variation_mm
+    return eval_vals.flatten()
+    
+
+def _calc_minmaxscaler(values):
+    input_values = values.values.reshape(-1,1)
+    scaler = MinMaxScaler()
+    return scaler.fit_transform(input_values)
+    
+
 def to_json(y_pred):
     y_pred_json = []
     for i, val in enumerate(y_pred):
