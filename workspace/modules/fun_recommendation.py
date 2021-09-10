@@ -16,8 +16,9 @@ def run(y_json):
     df_y = _json2dataframe(y_json)
     x_train, y_train = _create_train_set(fun_features, df_y)
     y_pred = _calc_gpr(fun_features, x_train, y_train)
-    eval_vals = _calc_eval_vals(y_pred)
-    return to_json(eval_vals)
+    df_eval_vals = _calc_eval_vals(y_pred)
+    df_eval_vals_sorted = _sort_eval_vals(df_eval_vals)
+    return to_json(df_eval_vals, df_eval_vals_sorted)
     
     
 def _json2dataframe(y_json):
@@ -63,17 +64,24 @@ def _calc_eval_vals(y_pred):
     B = 1 - A
     # 期待値が高く,ばらつきが大きい(今までに経験してない)遊びをレコメンドしたい気持ちが込められてる
     eval_vals = A * expected_value_mm + B * variation_mm
-    return eval_vals.flatten()
+    return pd.DataFrame(eval_vals, index=y_pred.index, columns=["eval_val"])
     
 
 def _calc_minmaxscaler(values):
     input_values = values.values.reshape(-1,1)
     scaler = MinMaxScaler()
     return scaler.fit_transform(input_values)
-    
 
-def to_json(y_pred):
+
+def _sort_eval_vals(df_eval_vals):
+    return df_eval_vals.sort_values("eval_val", ascending=False)
+
+    
+def to_json(df_eval_vals, df_eval_vals_sorted):
     y_pred_json = []
-    for i, val in enumerate(y_pred):
-        y_pred_json.append(dict(id=i, val=val))
+    for i, target in enumerate([df_eval_vals, df_eval_vals_sorted]):
+        target_json = []
+        for j, val in enumerate(target.values.flatten()): 
+            target_json.append(dict(hangout_id=target.index[j], val=val))
+        y_pred_json.append(dict(original=target_json)) if i==0 else y_pred_json.append(dict(sorted=target_json))
     return y_pred_json
