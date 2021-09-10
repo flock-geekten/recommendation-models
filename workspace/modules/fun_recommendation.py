@@ -17,6 +17,7 @@ def run(y_json):
     x_train, y_train = _create_train_set(fun_features, df_y)
     y_pred = _calc_gpr(fun_features, x_train, y_train)
     df_eval_vals = _calc_eval_vals(y_pred)
+    
     df_eval_vals_sorted = _sort_eval_vals(df_eval_vals)
     return to_json(df_eval_vals, df_eval_vals_sorted)
     
