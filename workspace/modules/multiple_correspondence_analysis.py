@@ -9,13 +9,15 @@ import mca
 
 # 遊び特徴量の出力先
 OUTPUT_LOCATION = '/home/workspace/data/'
-OUTPUT_FILENAME = 'fun_features.csv'
+OUTPUT_FILENAME = 'fun_data.csv'
 
 def run(json, visualization=False):
     playlist = _data_processing(json)
     fun_features = _calc_mca(playlist, visualization)
+    # 遊びの名前の追加
+    fun_data = pd.concat([_get_fun_names(json),fun_features], axis=1)
     # CSVへ書き出す
-    fun_features.to_csv(OUTPUT_LOCATION+OUTPUT_FILENAME, index=True)
+    fun_data.to_csv(OUTPUT_LOCATION+OUTPUT_FILENAME, index=True)
 
 def _data_processing(json):
     df_json = _json2dataframe(json)
@@ -66,3 +68,11 @@ def _visualize(playlist, rows, cols):
     plt.axvline(0, color='gray')
     
     fig.savefig(OUTPUT_LOCATION+'visualization.png')
+    
+# 遊びの名前を取ってくる
+def _get_fun_names(json):
+    df_json = _json2dataframe(json)
+    df_json.columns = df_json.loc['id']
+    df_fun_names = df_json.loc['name']
+    return pd.DataFrame(df_fun_names)
+    

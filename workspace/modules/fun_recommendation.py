@@ -8,21 +8,27 @@ import GPy
 from sklearn.preprocessing import MinMaxScaler
 
 # 多重対応分析の結果のcsvの保存場所
-FUN_FEATURES = '/home/workspace/data/fun_features.csv'
+FUN_FEATURES = '/home/workspace/data/fun_data.csv'
 
 
 def run(y_json, is_sorted=1):
-    fun_features = pd.read_csv(FUN_FEATURES, index_col=0)
+    fun_name, fun_features = _get_datasets(y_json)
     df_y = _json2dataframe(y_json)
     x_train, y_train = _create_train_set(fun_features, df_y)
     y_pred = _calc_gpr(fun_features, x_train, y_train)
     df_eval_vals = _calc_eval_vals(y_pred)
+    df_eval_vals = pd.concat([fun_name, df_eval_vals], axis=1)
     if is_sorted == 1:
         df_eval_vals_sorted = _sort_eval_vals(df_eval_vals)
         return to_json(df_eval_vals_sorted)
     return to_json(df_eval_vals)
-    
-    
+
+def _get_datasets(y_json):
+    fun_data = pd.read_csv(FUN_FEATURES, index_col=0)
+    fun_name = pd.DataFrame(fun_data['name'])
+    fun_features = fun_data.drop('name',axis=1)
+    return fun_name, fun_features
+     
 def _json2dataframe(y_json):
     for i, one_json in enumerate(y_json):
         shaping_json = {"{}".format(i): one_json} 
@@ -81,6 +87,9 @@ def _sort_eval_vals(df_eval_vals):
     
 def to_json(results):   
     y_pred_json = []
-    for i, val in enumerate(results.values.flatten()): 
-        y_pred_json.append(dict(hangout_id=results.index[i], score=val))
+    for i, score in enumerate(results["eval_val"].values.flatten()): 
+        y_pred_json.append(
+            dict( hangout_id = int(results.index[i]), 
+                  fun_name = results["name"].iloc[i],
+                  score = score))
     return y_pred_json
