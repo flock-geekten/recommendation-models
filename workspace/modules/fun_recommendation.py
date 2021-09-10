@@ -11,15 +11,16 @@ from sklearn.preprocessing import MinMaxScaler
 FUN_FEATURES = '/home/workspace/data/fun_features.csv'
 
 
-def run(y_json):
+def run(y_json, is_sorted=1):
     fun_features = pd.read_csv(FUN_FEATURES, index_col=0)
     df_y = _json2dataframe(y_json)
     x_train, y_train = _create_train_set(fun_features, df_y)
     y_pred = _calc_gpr(fun_features, x_train, y_train)
     df_eval_vals = _calc_eval_vals(y_pred)
-    
-    df_eval_vals_sorted = _sort_eval_vals(df_eval_vals)
-    return to_json(df_eval_vals, df_eval_vals_sorted)
+    if is_sorted == 1:
+        df_eval_vals_sorted = _sort_eval_vals(df_eval_vals)
+        return to_json(df_eval_vals_sorted)
+    return to_json(df_eval_vals)
     
     
 def _json2dataframe(y_json):
@@ -78,11 +79,8 @@ def _sort_eval_vals(df_eval_vals):
     return df_eval_vals.sort_values("eval_val", ascending=False)
 
     
-def to_json(df_eval_vals, df_eval_vals_sorted):
+def to_json(results):   
     y_pred_json = []
-    for i, target in enumerate([df_eval_vals, df_eval_vals_sorted]):
-        target_json = []
-        for j, val in enumerate(target.values.flatten()): 
-            target_json.append(dict(hangout_id=target.index[j], val=val))
-        y_pred_json.append(dict(original=target_json)) if i==0 else y_pred_json.append(dict(sorted=target_json))
+    for i, val in enumerate(results.values.flatten()): 
+        y_pred_json.append(dict(hangout_id=results.index[i], score=val))
     return y_pred_json
